@@ -10,7 +10,6 @@ import 'primeicons/primeicons.css'
 const app = createApp(App);
 
 app.use(PrimeVue, {
-    // Default theme configuration
     theme: {
         preset: Aura,
         options: {

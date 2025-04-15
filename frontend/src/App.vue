@@ -25,34 +25,37 @@
           icon="pi pi-microphone"
           iconPos="right"
           @click="startRecording"
+          :disabled="isRecording"
         />
 
         <div class="transcription-button">
           <Button
-          label="Transcrire depuis l'application"
-          severity="info"
-          rounded
-          style="margin-left: 15px; margin-bottom: 15px; width: 200px"
-          icon="pi pi-microchip-ai"
-          iconPos="right"
-          @click="transcribe"
-        />
-        <input
-          type="file"
-          accept="audio/*"
-          ref="fileInput"
-          style="display: none"
-          @change="uploadAndTranscribeFile"
-        />
-        <Button
-          label="Transcrire depuis un fichier"
-          severity="info"
-          rounded
-          style="margin-left: 15px; width: 200px"
-          icon="pi pi-upload"
-          iconPos="right"
-          @click="() => fileInput.click()"
-        />
+            label="Transcrire depuis l'application"
+            severity="info"
+            rounded
+            style="margin-left: 15px; margin-bottom: 15px; width: 200px"
+            icon="pi pi-microchip-ai"
+            iconPos="right"
+            @click="transcribe"
+            :disabled="!isRecording || isUploading"
+          />
+          <input
+            type="file"
+            accept="audio/*"
+            ref="fileInput"
+            style="display: none"
+            @change="uploadAndTranscribeFile"
+          />
+          <Button
+            label="Transcrire depuis un fichier"
+            severity="info"
+            rounded
+            style="margin-left: 15px; width: 200px"
+            icon="pi pi-upload"
+            iconPos="right"
+            @click="() => fileInput.click()"
+            :disabled="isUploading"
+          />
         </div>
       </div>
 
@@ -60,7 +63,17 @@
         <Card>
           <template #title>Transcription</template>
           <template #content>
-            <p class="m-0" v-if="transcription">
+            <div
+              v-if="isUploading"
+              style="display: flex; flex-direction: column; align-items: center"
+            >
+              <div
+                ref="animationContainer"
+                style="width: 150px; height: 150px"
+              ></div>
+              <p>Transcription en cours...</p>
+            </div>
+            <p class="m-0" v-else-if="transcription">
               {{ transcription }}
             </p>
             <p class="m-0" v-else>En attente de transcription...</p>
@@ -82,21 +95,48 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted, watch, nextTick  } from "vue";
 import { Menubar, Button, Card } from "primevue";
 import axios from "axios";
+import Vue3Lottie from "vue3-lottie";
+import lottie from "lottie-web";
+import loadingAnimationData from "@/assets/animation/Elia.json";
+
+const animationContainer = ref(null);
+let mediaRecorder;
+let audioChunks = [];
+const isRecording = ref(false);
+const isUploading = ref(false);
+const transcription = ref("");
+const fileInput = ref(null);
+
+watch(isUploading, async (val) => {
+  if (val) {
+    await nextTick();
+
+    if (animationContainer.value) {
+      lottieInstance = lottie.loadAnimation({
+        container: animationContainer.value,
+        renderer: "svg",
+        loop: true,
+        autoplay: true,
+        animationData: loadingAnimationData,
+      });
+    }
+  } else {
+    if (lottieInstance) {
+      lottieInstance.destroy();
+      lottieInstance = null;
+    }
+  }
+});
+
 const items = ref([
   {
     image: "/logo.jpg",
     url: "/",
   },
 ]);
-
-let mediaRecorder;
-let audioChunks = [];
-const isRecording = ref(false);
-const transcription = ref("");
-const fileInput = ref(null);
 
 const startRecording = async () => {
   if (isRecording.value) return;
@@ -116,14 +156,13 @@ const startRecording = async () => {
 
     mediaRecorder.start();
     isRecording.value = true;
-    console.log("Enregistrement démarré");
   } catch (error) {
-    console.error("Erreur lors de l'accès au microphone:", error);
   }
 };
 
 const sendAudioToBackend = async (audioBlob) => {
   try {
+    isUploading.value = true;
     const formData = new FormData();
     formData.append("audio", audioBlob, "audio.wav");
 
@@ -145,6 +184,8 @@ const sendAudioToBackend = async (audioBlob) => {
   } catch (error) {
     console.error("Erreur lors de l'envoi de l'audio:", error);
     transcription.value = "Erreur lors de l'envoi de l'audio.";
+  } finally {
+    isUploading.value = false;
   }
 };
 
@@ -153,7 +194,6 @@ const transcribe = () => {
 
   mediaRecorder.stop();
   isRecording.value = false;
-  console.log("Enregistrement arrêté");
 };
 
 const downloadTranscription = () => {
@@ -177,6 +217,7 @@ const uploadAndTranscribeFile = async (event) => {
   const file = event.target.files[0];
   if (!file) return;
 
+  isUploading.value = true;
   const formData = new FormData();
   formData.append("audio", file);
 
@@ -199,6 +240,8 @@ const uploadAndTranscribeFile = async (event) => {
   } catch (error) {
     console.error("Erreur lors de l'envoi du fichier audio:", error);
     transcription.value = "Erreur lors de l'envoi du fichier audio.";
+  } finally {
+    isUploading.value = false;
   }
 };
 </script>
@@ -225,7 +268,7 @@ const uploadAndTranscribeFile = async (event) => {
   align-items: left;
   padding: 20px;
 }
-.transcription-button{
+.transcription-button {
   display: flex;
   flex-direction: column;
   justify-content: space-around;
