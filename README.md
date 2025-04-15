@@ -2,7 +2,8 @@
 
 ## Description
 
-[Décrivez brièvement votre projet ici.]
+    Le projet de la Communauté Professionnelle Territoriale de Santé Entre Cèze et Gardon en Cevennes (CPTS-ECEGEC) en partenariat avec ISIS ingénieurs vise à développer une solution innovante basée sur la reconnaissance vocale (Speech-to-Text) adaptée aux besoins spécifiques des professionnels de santé. En nous inspirant de modèles d’intelligence artificielle open-source comme Whisper et DeepSpeech, nous concevons un outil performant, personnalisable et conforme aux réglementations telles que le RGPD.
+Cette solution sera optimisée pour des scénarios complexes et inclura des fonctionnalités avancées, comme la transcription précise de termes médicaux lors d'une consultation de médecine générale, permettant ainsi la génération automatique de comptes rendus. Nous mettons également l’accent sur une interface utilisateur intuitive et un environnement technique robuste, garantissant un déploiement facile dans les structures de santé.
 
 ## Prérequis
 
